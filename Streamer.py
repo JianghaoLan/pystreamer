@@ -4,23 +4,23 @@ from queue import Queue
 import numpy as np
 from FfmpegProcess import FfmpegProcess
 
-from TcpServer import TcpServer
+from TcpDataServer import TcpDataServer
 
 
-class StreamingHelper:
-    def __init__(self, streaming_server: str, resolution: Tuple[int, int], fps: float, 
+class Streamer:
+    def __init__(self, server_url: str, resolution: Tuple[int, int], fps: float, 
                  sample_rate: int, max_queue_size: int=25, disable_warning: bool=False):
         """
-        Contruct a StreamingHelper object.
+        Contruct a Streamer object.
 
         Args:
-            streaming_server (str): Streaming server address.
+            server_url (str): Streaming server address.
             resolution (Tuple[int, int]): Video resolution (width, height).
             fps (float): Video frames per second.
             sample_rate (int): Audio sample rate.
             max_queue_size (int): The maximum number of buffered frames before ffmpeg receives.
         """
-        self.streaming_server = streaming_server
+        self.server_url = server_url
         self.resolution = resolution
         self.fps = fps
         self.sample_rate = sample_rate
@@ -52,7 +52,7 @@ class StreamingHelper:
     
     def start(self):
         """
-        Start streaming. 
+        Start Streaming. 
         """
         if self.start_flag:
             return
@@ -61,19 +61,19 @@ class StreamingHelper:
         self.a_queue = Queue(self.audio_buffer_size)
         
         # We use TCP protocol to transfer data to ffmpeg.
-        self.v_server = TcpServer(self.v_queue)
-        self.a_server = TcpServer(self.a_queue, port=1235)
+        self.v_server = TcpDataServer(self.v_queue)
+        self.a_server = TcpDataServer(self.a_queue, port=1235)
         self.v_server.start()
         self.a_server.start()
         
         video_source = f'tcp://localhost:{self.v_server.get_port()}'
         audio_source = f'tcp://localhost:{self.a_server.get_port()}'
-        self.ffmpeg_process = FfmpegProcess(video_source, audio_source, self.streaming_server, self.resolution, self.fps, self.sample_rate)
+        self.ffmpeg_process = FfmpegProcess(video_source, audio_source, self.server_url, self.resolution, self.fps, self.sample_rate)
         self.ffmpeg_process.run()
 
     def push(self, video_frames: Union[np.ndarray, None], audio_frames: Union[np.ndarray, None]=None, check_duration: bool=True):
         """
-        Push video and audio frames to stream server.
+        Push video and audio frames to streaming server.
 
         Args:
             video_frame (Union[np.ndarray, None]): A 3d numpy array (height, width, 3) representing one video frame or 
@@ -111,7 +111,7 @@ class StreamingHelper:
 
     def stop(self):
         """
-        Stop streaming.
+        Stop Streaming.
         """
         self.v_server.stop()
         self.a_server.stop()
@@ -123,37 +123,3 @@ class StreamingHelper:
         self.a_server = None
         self.ffmpeg_process = None
         self.start_flag = False
-    
-    
-if __name__ == '__main__':
-    import cv2
-    import librosa
-    
-    camera_path = "test-input2.mp4"
-    cap = cv2.VideoCapture(camera_path)
-    
-    # Get video information
-    fps = int(cap.get(cv2.CAP_PROP_FPS))
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    print(fps, width, height)
-    
-    y, sr = librosa.load(camera_path, sr=44100)
-
-    streaming_helper = StreamingHelper('rtmp://localhost:1935/live/', (width, height), fps, sr, max_queue_size=30)
-    streaming_helper.start()
-    i = 0
-    audio_frame_size = sr // fps
-    # read webcamera
-    while (cap.isOpened()):
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        # write to pipe
-        streaming_helper.push(frame, y[i:i+audio_frame_size], check_duration=False)
-        i += audio_frame_size
-
-    streaming_helper.stop()
-    
-    print("Finish.")

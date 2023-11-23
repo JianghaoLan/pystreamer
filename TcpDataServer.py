@@ -3,7 +3,7 @@ import socket
 import threading
 
 
-class TcpServer:
+class TcpDataServer:
     def __init__(self, queue: Queue, host='0.0.0.0', port=1234):
         self.queue = queue
         self.host = host
