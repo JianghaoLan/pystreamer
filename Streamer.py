@@ -84,6 +84,8 @@ class Streamer:
             check_duration (bool): If False, the duration of the video and audio will not be checked, nor will it be truncated
             or padded. Default is True.
         """
+        assert self.start_flag == True, 'You should start() the streamer first!'
+        
         video_frame_list = []
         audio_frame_list = []
         
