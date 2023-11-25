@@ -1,1 +1,1 @@
-from Streamer import Streamer
+from .Streamer import Streamer

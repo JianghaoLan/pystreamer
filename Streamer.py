@@ -1,10 +1,10 @@
 from typing import Tuple, Union
-from queue import Queue
+from queue import Queue, Full
 
 import numpy as np
-from FfmpegProcess import FfmpegProcess
+from .FfmpegProcess import FfmpegProcess
 
-from TcpDataServer import TcpDataServer
+from .TcpDataServer import TcpDataServer
 
 
 class Streamer:
@@ -86,11 +86,12 @@ class Streamer:
         """
         video_frame_list = []
         audio_frame_list = []
+        
         if video_frames is not None:
             assert len(video_frames.shape) in [3, 4] and (video_frames.shape[-2], video_frames.shape[-3]) == self.resolution, \
-                'video_frame must be shape of ({}, {}, 3) or (n, {}, {}, 3)'.format(self.resolution[1], self.resolution[0], 
+                'Video_frame must be shape of ({}, {}, 3) or (n, {}, {}, 3).'.format(self.resolution[1], self.resolution[0], 
                                                                                     self.resolution[1], self.resolution[0])
-            assert video_frames.dtype == np.uint8, 'video_frame.dtype must be uint8'
+            assert video_frames.dtype == np.uint8, 'Video_frame must be type of uint8.'
             if len(video_frames.shape) == 3:
                 video_frame_list = [video_frames]
             else:
@@ -98,16 +99,23 @@ class Streamer:
         
         expected_audio_length = int(self.sample_rate * (len(video_frame_list) / self.fps))
         if audio_frames is not None:
-            assert len(audio_frames.shape) == 1, 'audio frames must be a 1d array'
+            assert len(audio_frames.shape) == 1 and audio_frames.dtype == self.pcm_dtype, \
+                f'Audio frames must be a 1d np.{self.pcm_dtype} array.'
         else:
             audio_frames = np.zeros((expected_audio_length, ), dtype=self.pcm_dtype)
         if check_duration:
             audio_frames = self._pad_or_truncate(audio_frames, expected_audio_length)
         audio_frame_list = np.array_split(audio_frames, len(video_frame_list))
         
-        for video_frame, audio_frame in zip(video_frame_list, audio_frame_list):    
-            self.v_queue.put(video_frame.tobytes())
-            self.a_queue.put(audio_frame.tobytes())
+        for video_frame, audio_frame in zip(video_frame_list, audio_frame_list):
+            try:
+                self.v_queue.put(video_frame.tobytes(), timeout=30)
+            except Full:
+                raise Exception("Put video time out.")
+            try:
+                self.a_queue.put(audio_frame.tobytes(), timeout=30)
+            except Full:
+                raise Exception("Put audio time out.")
 
     def stop(self):
         """

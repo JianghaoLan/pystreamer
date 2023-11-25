@@ -1,8 +1,6 @@
 import subprocess
 from typing import Tuple, Union
 
-import numpy as np
-
 
 class FfmpegProcess:
     def __init__(self, video_source: str, audio_source: str, streaming_server: str, 
@@ -23,6 +21,7 @@ class FfmpegProcess:
         cmd = [
             'ffmpeg',
             '-y', '-re',
+            '-fflags', 'nobuffer',
             '-f', 'rawvideo',
             '-vcodec','rawvideo',
             '-pix_fmt', 'bgr24',
