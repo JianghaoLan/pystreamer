@@ -46,7 +46,6 @@ class FfmpegProcess:
             '-pix_fmt', 'yuv420p',
             '-preset', 'veryfast', 
             '-f', 'flv',
-            # '-fflags', 'flush_packets',
             self.streaming_server,
         ]
         cmd = []

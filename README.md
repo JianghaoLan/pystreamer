@@ -1,6 +1,6 @@
 # PyStreamer
 
-A FFmpeg-based tool that can push video and audio to RTMP streaming server in real time. It can be easily integrated into your python DIP workflow to create live streaming applications. 
+A FFmpeg-based tool that helps you push video and audio to RTMP streaming server in real time. It can be easily integrated into your python DIP workflow to create live streaming applications. 
 
 This repository is currently under development, and the code may be unstable. If you encounter any issues or bugs, please feel free to open an issue.
 

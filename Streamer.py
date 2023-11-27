@@ -63,9 +63,8 @@ class Streamer:
         if self.start_flag:
             return
         self.start_flag = True
-        self.v_queue = Queue(self.max_queue_size)
-        self.a_queue = Queue(self.audio_buffer_size)
         
+        self.v_queue = Queue(self.max_queue_size)   
         # We use TCP protocol to transfer data to ffmpeg.
         self.v_server = TcpDataServer(self.v_queue, thread_name='VideoStreamSender')
         self.v_server.start()
@@ -73,10 +72,10 @@ class Streamer:
         
         audio_source = None
         if not self.no_audio:
+            self.a_queue = Queue(self.audio_buffer_size)
             self.a_server = TcpDataServer(self.a_queue, thread_name='AudioStreamSender')
             self.a_server.start()
             audio_source = f'tcp://localhost:{self.a_server.get_port()}'
-
 
         self.ffmpeg_process = FfmpegProcess(video_source, audio_source, self.server_url, 
                                             self.resolution, self.fps, self.sample_rate,
