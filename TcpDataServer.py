@@ -4,22 +4,20 @@ import threading
 
 
 class TcpDataServer:
-    def __init__(self, queue: Queue, host='0.0.0.0', port=1234):
+    def __init__(self, queue: Queue, host='127.0.0.1', port=0, thread_name=None):
         self.queue = queue
         self.host = host
         self.port = port
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket = None
         self.client_socket = None
-        
-        self.start_thread = threading.Thread(target=self._start)
+
+        self.start_thread = threading.Thread(target=self._start, name=thread_name)
         self.stop_event = threading.Event()
+        self.started = False
         
     def _start(self):
         try:
-            self.socket.bind((self.host, self.port))
-            self.socket.listen(5)
-            
-            self.client_socket, addr = self.socket.accept()
+            self.client_socket, _ = self.socket.accept()
 
             while True:
                 try:
@@ -41,18 +39,20 @@ class TcpDataServer:
                 self.client_socket = None
         
     def start(self):
-        if self.start_thread.is_alive():
-            self.stop()
+        if self.started:
+            raise RuntimeError("TcpDataServer can only be start() once.")
+        
+        self.started = True
+        
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.bind((self.host, self.port))
+        self.socket.listen(1)
         self.start_thread.start()
 
     def stop(self):
-        if self.client_socket is None:
-            self.socket.close()
-
+        self.socket.close()
         self.stop_event.set()
         self.start_thread.join()
-        self.stop_event.clear()
-        self.socket.close()
 
     def get_port(self):
-        return self.port
+        return self.socket.getsockname()[1]
