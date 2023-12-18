@@ -67,8 +67,8 @@ if __name__ == '__main__':
         audio_frame = audio_frames[i:i+audio_frame_size]
 
         ### 3. use `push()` to push your media data to RTMP server ###
-        # `video_frame`: numpy array (w, h, 3) or (n, w, h, 3), uint8
-        # `audio_frame`: 1d numpy array (audio_frame_size, ), float32
+        # `video_frame`: numpy array (h, w, 3) or (n, h, w, 3), uint8
+        # `audio_frame`: 1d numpy array, float32
         streamer.push(video_frame, audio_frame)
 
         i += audio_frame_size
