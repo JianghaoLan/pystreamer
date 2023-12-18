@@ -65,7 +65,7 @@ class FfmpegProcess:
         stdout, stderr = subprocess.DEVNULL, subprocess.DEVNULL
         if self.show_log:
             stdout, stderr = None, None
-        self.ffmpeg_process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr)
+        self.ffmpeg_process = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr)
 
     def wait(self, timeout: Union[float, None]=None):
         self.ffmpeg_process.wait(timeout)
