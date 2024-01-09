@@ -14,7 +14,7 @@ class FfmpegProcess:
         self.sample_rate = sample_rate
         self.show_log = show_log
         
-        self.ffmpeg_process = None
+        self.ffmpeg_process: Union[None, subprocess.Popen] = None
         
     def _get_command(self):
         width, height = self.resolution
@@ -68,4 +68,9 @@ class FfmpegProcess:
         self.ffmpeg_process = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr)
 
     def wait(self, timeout: Union[float, None]=None):
-        self.ffmpeg_process.wait(timeout)
+        if self.ffmpeg_process is not None:
+            self.ffmpeg_process.wait(timeout)
+
+    def terminate(self):
+        if self.ffmpeg_process is not None:
+            self.ffmpeg_process.terminate()

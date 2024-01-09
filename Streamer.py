@@ -82,17 +82,19 @@ class Streamer:
                                             show_log=self.show_log)
         self.ffmpeg_process.run()
 
-    def push(self, video_frames: np.ndarray, audio_frames: Union[np.ndarray, None]=None, check_duration: bool=True):
+    def push(self, video_frames: np.ndarray, audio_frames: Union[np.ndarray, None]=None, timeout: float=15, check_duration: bool=True):
         """
         Push video and audio frames to streaming server.
 
         Args:
-            video_frame (Union[np.ndarray, None]): A 3d numpy array (height, width, 3) representing one video frame or 
+            video_frames (Union[np.ndarray, None]): A 3d numpy array (height, width, 3) representing one video frame or \
             4d numpy array (n, height, width, 3) representing n video frame.
-            audio_frames (Union[np.ndarray, None], optional): A 1d numpy array representating corrsponding audio frames. 
-            If not provided, empty (zeros) will be used. By default, this method will enforce the video and audio are of the 
+            audio_frames (Union[np.ndarray, None], optional): A 1d numpy array representating corrsponding audio frames. \
+            If not provided, empty (zeros) will be used. By default, this method will enforce the video and audio are of the \
             same duration by truncating or padding the audio if necessary.
-            check_duration (bool): If False, the duration of the video and audio will not be checked, nor will it be truncated
+            timeout (float, optinoal): Enquene timeout. It blocks at most 'timeout' seconds and raises exception if no free slot \
+            was available within that time.
+            check_duration (bool): If False, the duration of the video and audio will not be checked, nor will it be truncated \
             or padded. Defaults to True.
         """
         assert self.start_flag == True, 'You should start() this streamer first!'
@@ -125,12 +127,12 @@ class Streamer:
             
             if self.no_audio:
                 for video_frame in video_frame_list:
-                    self.v_queue.put(video_frame.tobytes(), timeout=30)
+                    self.v_queue.put(video_frame.tobytes(), timeout=timeout)
                     
             else:
                 for video_frame, audio_frame in zip(video_frame_list, audio_frame_list):
-                    self.v_queue.put(video_frame.tobytes(), timeout=30)
-                    self.a_queue.put(audio_frame.tobytes(), timeout=30)
+                    self.v_queue.put(video_frame.tobytes(), timeout=timeout)
+                    self.a_queue.put(audio_frame.tobytes(), timeout=timeout)
 
         except Full:
             raise Exception("Data enqueuing timeout. Try increasing `max_queue_size` and try again."
@@ -140,6 +142,7 @@ class Streamer:
         """
         Stop Streaming.
         """
+        self.start_flag = False
         if self.v_server is not None:
             self.v_server.stop()
         if self.a_server is not None:
@@ -152,4 +155,3 @@ class Streamer:
         self.v_server = None
         self.a_server = None
         self.ffmpeg_process = None
-        self.start_flag = False
