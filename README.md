@@ -37,7 +37,7 @@ from pystreamer import Streamer
 
 if __name__ == '__main__':
 
-    # Use opencv to read video frames and librosa to read audio frames. It's not important how you get these data.
+    # Use opencv to read video frames and librosa to read audio frames. You can get these data by any other ways.
     import cv2
     import librosa
 
